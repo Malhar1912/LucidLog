@@ -17,6 +17,16 @@ except Exception:
     lucidlog.exception("Lookup failed")
 ```
 
+## Complete example
+
+Run the bundled demo for a full tour of the library's features:
+
+```bash
+python examples/complete_demo.py
+```
+
+The demo covers chained exceptions, redaction, render output, custom rules, logging payloads, and the threading/asyncio integrations.
+
 ## Public API
 
 - `lucidlog.install()`
