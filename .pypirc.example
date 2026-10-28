@@ -5,5 +5,5 @@ index-servers =
 [pypi]
 repository = https://upload.pypi.org/legacy/
 username = __token__
-# Set the password via environment variable or by filling in the token value below.
+# Copy this file to ~/.pypirc and replace the token below.
 # password = pypi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

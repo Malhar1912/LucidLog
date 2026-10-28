@@ -33,3 +33,4 @@ htmlcov/
 # Local env files
 .env
 .env.*
+.pypirc

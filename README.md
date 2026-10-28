@@ -1,5 +1,9 @@
 # LucidLog
 
+![CI](https://github.com/Malhar1912/LucidLog/actions/workflows/ci.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/lucidlog.svg)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
+
 LucidLog is a lightweight, source-aware exception diagnostic library for Python.
 
 It keeps the original exception behavior intact, adds a clearer reading of the relevant traceback frame, and provides deterministic built-in explanations without requiring a remote service.
@@ -85,6 +89,40 @@ python -m pytest
 ```
 
 The suite covers chained and grouped exceptions, cycle/size limits, redaction, terminal colors, hook restoration, threading, asyncio, structured logging, and uncaught-process exit behavior.
+
+## Project structure
+
+```text
+LucidLog/
+├── .github/workflows/   # CI and release automation
+├── docs/                # project documentation and changelog
+├── examples/            # end-to-end examples and demonstrations
+├── scripts/             # local release and publishing helpers
+├── src/lucidlog/        # library package source
+├── tests/               # unit and integration tests
+├── .gitignore
+├── .pypirc.example      # local PyPI credentials template (do not commit secrets)
+├── README.md
+├── pyproject.toml
+├── pytest.ini
+└── LICENSE              # if you choose to add one in the future
+```
+
+## Release workflow
+
+Use the local helper script to build, validate, and publish the package:
+
+```bash
+python scripts/publish_release.py --repository pypi
+```
+
+For a dry validation run without uploading:
+
+```bash
+python scripts/publish_release.py --repository pypi --no-upload
+```
+
+Store real PyPI credentials in your user-level `.pypirc` file outside the repo, never in Git.
 
 ## Notes
 
