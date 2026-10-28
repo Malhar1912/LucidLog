@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Structured project documentation for release and publishing workflows.
 - Professional repository conventions for local release automation and CI.
 
+## [0.1.2] - 2026-10-28
+
+### Added
+- Professional release documentation, changelog, and local publishing helper.
+- Production-ready repository structure with docs and scripts organization.
+- CI and release automation workflow templates for GitHub.
+
+### Changed
+- Finalized version metadata and GitHub publication setup for a cleaner release pipeline.
+- Improved README visibility with badges and project structure summary.
+
 ## [0.1.1] - 2026-10-28
 
 ### Added
