@@ -1,0 +1,51 @@
+Metadata-Version: 2.4
+Name: lucidlog
+Version: 0.1.0
+Summary: Source-aware exception diagnostics with conservative explanations
+Author: LucidLog contributors
+License: MIT
+Keywords: debugging,exceptions,diagnostics,tracebacks
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+
+# LucidLog
+
+LucidLog is a lightweight, source-aware exception diagnostic library for Python.
+
+It keeps the original exception behavior intact, adds a clearer reading of the relevant traceback frame, and provides deterministic built-in explanations without requiring a remote service.
+
+## Quick start
+
+```python
+import lucidlog
+
+lucidlog.install()
+
+try:
+    value = {}["missing"]
+except Exception:
+    lucidlog.exception("Lookup failed")
+```
+
+## Public API
+
+- `lucidlog.install()`
+- `lucidlog.uninstall()`
+- `lucidlog.exception(message, *, stream=None, full=False)`
+- `lucidlog.diagnose(exc, *, config=None)`
+- `lucidlog.log_exception(logger, message, *, full=False)`
+
+## Notes
+
+- The core package is standard-library only.
+- It does not capture local variables by default.
+- It keeps the original traceback available and does not replace the application's original exception flow.
