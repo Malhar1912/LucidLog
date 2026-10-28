@@ -9,7 +9,7 @@ description = "Source-aware exception diagnostics with conservative explanations
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Malhar Pangarkar" }]
+authors = [{ name = "Malhar Pangarkar", email = "malharpangarkar19@gmail.com" }]
 keywords = ["debugging", "exceptions", "diagnostics", "tracebacks"]
 classifiers = [
   "Programming Language :: Python :: 3",
