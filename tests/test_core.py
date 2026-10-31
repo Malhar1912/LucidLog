@@ -43,6 +43,20 @@ def test_source_context_available_for_runtime_file():
     assert diagnostic.primary_frame.source_line is not None
 
 
+def test_git_responsibility_metadata_is_attached_when_available():
+    try:
+        raise ValueError("git traceability")
+    except Exception as exc:
+        diagnostic = lucidlog.diagnose(exc)
+
+    frame = diagnostic.primary_frame
+    assert frame is not None
+    assert frame.responsibility is not None
+    assert frame.responsibility.commit_id
+    assert frame.responsibility.author
+    assert "responsibility" in diagnostic.to_dict()["frames"][0]
+
+
 def test_render_diagnostic_text():
     try:
         [1, 2][10]

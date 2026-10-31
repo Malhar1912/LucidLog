@@ -7,8 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Git-aware line responsibility metadata that exposes author, email, commit hash, and summary for the offending source line.
 - Structured project documentation for release and publishing workflows.
 - Professional repository conventions for local release automation and CI.
+
+## [0.1.4] - 2026-10-31
+
+### Added
+- Git-blame responsibility tracking for exception frames, including author attribution and commit metadata when a repository is available.
 
 ## [0.1.3] - 2026-10-28
 

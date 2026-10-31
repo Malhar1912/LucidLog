@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 import threading
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 import lucidlog
 from lucidlog import Config
@@ -94,7 +100,25 @@ def main() -> None:
         print("\nLogger record includes a sanitized `lucidlog` payload:")
         print(diagnostic.to_json(indent=2))
 
-    show("4) Thread hook integration")
+    show("4) Git responsibility metadata")
+    try:
+        raise RuntimeError("responsibility metadata demo")
+    except RuntimeError as exc:
+        diagnostic = lucidlog.diagnose(exc, config=config)
+        frame = diagnostic.primary_frame
+        responsibility = frame.responsibility if frame else None
+        print("Git responsibility metadata for the failing line:")
+        if responsibility is None:
+            print("  Not available: file is not under Git or blame metadata could not be resolved.")
+        else:
+            print(f"  author: {responsibility.author}")
+            print(f"  email: {responsibility.email}")
+            print(f"  commit: {responsibility.commit_id}")
+            print(f"  summary: {responsibility.summary}")
+            print(f"  date: {responsibility.date}")
+        print(diagnostic.to_json(indent=2))
+
+    show("5) Thread hook integration")
 
     def worker() -> None:
         raise RuntimeError("token=threaded-worker-secret")
@@ -103,7 +127,7 @@ def main() -> None:
     thread.start()
     thread.join()
 
-    show("5) Asyncio hook integration")
+    show("6) Asyncio hook integration")
 
     async def runner() -> None:
         install_asyncio_exception_handler(config=config)

@@ -13,11 +13,13 @@ from .api import (
     uninstall,
 )
 from .config import Config, default_config
+from .models import GitResponsibility
 from .rules import DiagnosticRule, clear_rules, list_rules, register_rule
 
 __all__ = [
     "Config",
     "DiagnosticRule",
+    "GitResponsibility",
     "clear_diagnostic_rules",
     "clear_rules",
     "default_config",
@@ -34,4 +36,4 @@ __all__ = [
     "uninstall",
 ]
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"

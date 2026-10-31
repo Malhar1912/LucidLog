@@ -15,12 +15,31 @@ class SourceLine:
 
 
 @dataclass(frozen=True)
+class GitResponsibility:
+    commit_id: str | None = None
+    author: str | None = None
+    email: str | None = None
+    summary: str | None = None
+    date: str | None = None
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "commit_id": self.commit_id,
+            "author": self.author,
+            "email": self.email,
+            "summary": self.summary,
+            "date": self.date,
+        }
+
+
+@dataclass(frozen=True)
 class FrameInfo:
     filename: str
     line_number: int
     function: str
     source_line: str | None
     context: tuple[SourceLine, ...] = ()
+    responsibility: GitResponsibility | None = None
 
     @property
     def location(self) -> str:
@@ -158,6 +177,7 @@ class Diagnostic:
                 }
                 for line in frame.context
             ],
+            "responsibility": frame.responsibility.to_dict() if frame.responsibility else None,
         }
 
     @staticmethod

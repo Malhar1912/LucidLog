@@ -19,7 +19,7 @@ def _safe_message(exc: BaseException, config: Config) -> str:
 
 
 def _build_frame(frame: traceback.FrameSummary, config: Config) -> FrameInfo:
-    source_line, context = read_source_context(
+    source_line, context, responsibility = read_source_context(
         frame.filename,
         frame.lineno,
         context_lines=config.max_source_context,
@@ -49,6 +49,7 @@ def _build_frame(frame: traceback.FrameSummary, config: Config) -> FrameInfo:
             else None
         ),
         context=safe_context,
+        responsibility=responsibility,
     )
 
 

@@ -31,6 +31,22 @@ python examples/complete_demo.py
 
 The demo covers chained exceptions, redaction, render output, custom rules, logging payloads, and the threading/asyncio integrations.
 
+## Responsibility metadata (Git-aware)
+
+When the code is running inside a Git repository, LucidLog can attach attribution metadata for the exact source line that raised the exception. The diagnostic records the author name, author email, commit ID, short summary, and date for that line when available.
+
+```python
+try:
+    raise RuntimeError("something broke")
+except RuntimeError as exc:
+    diagnostic = lucidlog.diagnose(exc)
+    frame = diagnostic.primary_frame
+    if frame and frame.responsibility:
+        print(frame.responsibility.author)
+        print(frame.responsibility.commit_id)
+        print(frame.responsibility.summary)
+```
+
 ## Public API
 
 - `lucidlog.install()`
