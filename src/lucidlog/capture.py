@@ -24,6 +24,7 @@ def _build_frame(frame: traceback.FrameSummary, config: Config) -> FrameInfo:
         frame.lineno,
         context_lines=config.max_source_context,
         max_file_bytes=config.max_source_file_bytes,
+        config=config,
     )
     safe_context = tuple(
         SourceLine(

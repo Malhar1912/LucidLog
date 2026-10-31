@@ -54,6 +54,8 @@ def test_git_responsibility_metadata_is_attached_when_available():
     assert frame.responsibility is not None
     assert frame.responsibility.commit_id
     assert frame.responsibility.author
+    assert frame.responsibility.confidence in {"exact_blame", "file_fallback", "codeowner_fallback"}
+    assert frame.responsibility.team is not None
     assert "responsibility" in diagnostic.to_dict()["frames"][0]
 
 

@@ -21,14 +21,30 @@ class GitResponsibility:
     email: str | None = None
     summary: str | None = None
     date: str | None = None
+    team: str | None = None
+    owner: str | None = None
+    confidence: str = "unavailable"
+    source: str = "unknown"
+    pr_number: int | None = None
+    pr_url: str | None = None
+    issue_id: str | None = None
+    issue_url: str | None = None
 
-    def to_dict(self) -> dict[str, str | None]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "commit_id": self.commit_id,
             "author": self.author,
             "email": self.email,
             "summary": self.summary,
             "date": self.date,
+            "team": self.team,
+            "owner": self.owner,
+            "confidence": self.confidence,
+            "source": self.source,
+            "pr_number": self.pr_number,
+            "pr_url": self.pr_url,
+            "issue_id": self.issue_id,
+            "issue_url": self.issue_url,
         }
 
 

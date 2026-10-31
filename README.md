@@ -33,7 +33,7 @@ The demo covers chained exceptions, redaction, render output, custom rules, logg
 
 ## Responsibility metadata (Git-aware)
 
-When the code is running inside a Git repository, LucidLog can attach attribution metadata for the exact source line that raised the exception. The diagnostic records the author name, author email, commit ID, short summary, and date for that line when available.
+When the code is running inside a Git repository, LucidLog can attach attribution metadata for the exact source line that raised the exception. The diagnostic records the author name, author email, commit ID, short summary, date, ownership metadata, confidence, and source for that line when available.
 
 ```python
 try:
@@ -43,9 +43,13 @@ except RuntimeError as exc:
     frame = diagnostic.primary_frame
     if frame and frame.responsibility:
         print(frame.responsibility.author)
+        print(frame.responsibility.team)
+        print(frame.responsibility.owner)
         print(frame.responsibility.commit_id)
-        print(frame.responsibility.summary)
+        print(frame.responsibility.confidence)
 ```
+
+Ownership metadata supports line-level blame, file-level fallback, and CODEOWNERS resolution. You can also configure privacy flags through `lucidlog.Config` such as `include_email`, `include_full_author_name`, and `redact_private_identity`.
 
 ## Public API
 

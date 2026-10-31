@@ -36,6 +36,10 @@ class Config:
     max_source_file_bytes: int = 5000000
     max_diagnosis_evidence: int = 20
     color: bool | None = None
+    include_email: bool = True
+    include_full_author_name: bool = True
+    redact_private_identity: bool = False
+    codeowners_path: str | None = None
 
     def __post_init__(self) -> None:
         for name in (
@@ -72,6 +76,9 @@ class Config:
             "include_exception_chain",
             "include_local_variables",
             "allow_network",
+            "include_email",
+            "include_full_author_name",
+            "redact_private_identity",
         ):
             if not isinstance(getattr(self, name), bool):
                 raise TypeError(f"{name} must be a boolean")
