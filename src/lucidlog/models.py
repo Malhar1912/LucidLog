@@ -29,6 +29,15 @@ class GitResponsibility:
     pr_url: str | None = None
     issue_id: str | None = None
     issue_url: str | None = None
+    pull_request_title: str | None = None
+    pull_request_author: str | None = None
+    pull_request_merged_at: str | None = None
+    issue_title: str | None = None
+    issue_labels: tuple[str, ...] = ()
+    issue_project: str | None = None
+    commit_url: str | None = None
+    added_lines: int | None = None
+    removed_lines: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -45,7 +54,19 @@ class GitResponsibility:
             "pr_url": self.pr_url,
             "issue_id": self.issue_id,
             "issue_url": self.issue_url,
+            "pull_request_title": self.pull_request_title,
+            "pull_request_author": self.pull_request_author,
+            "pull_request_merged_at": self.pull_request_merged_at,
+            "issue_title": self.issue_title,
+            "issue_labels": list(self.issue_labels),
+            "issue_project": self.issue_project,
+            "commit_url": self.commit_url,
+            "added_lines": self.added_lines,
+            "removed_lines": self.removed_lines,
         }
+
+
+ResponsibilityRecord = GitResponsibility
 
 
 @dataclass(frozen=True)

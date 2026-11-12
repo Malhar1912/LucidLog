@@ -7,6 +7,8 @@ from pathlib import Path
 
 from .config import Config
 from .models import GitResponsibility, SourceLine
+from .ownership import OwnershipResolution, OwnershipResolver
+from .redaction import sanitize_text
 
 
 def _read_source_lines(path: str, start: int, end: int, max_file_bytes: int) -> list[tuple[int, str]]:
@@ -33,7 +35,7 @@ def _git_root_for_path(path: str) -> str | None:
             git_dir = search_path / ".git"
             if git_dir.exists():
                 return str(search_path)
-    except OSError:
+    except (OSError, ValueError):
         return None
 
     try:
@@ -43,10 +45,11 @@ def _git_root_for_path(path: str) -> str | None:
             text=True,
             cwd=str(Path(path).resolve().parent),
             check=False,
+            timeout=3.0,
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except (OSError, ValueError):
+    except (OSError, ValueError, subprocess.TimeoutExpired):
         return None
     return None
 
@@ -69,40 +72,17 @@ def _infer_team(value: str | None) -> str | None:
     return "maintainers"
 
 
-def _codeowners_for_file(filename: str, repo_root: str | None = None) -> tuple[str | None, str | None]:
-    if not filename:
-        return None, None
-    repo_root = repo_root or _git_root_for_path(filename)
-    if repo_root is None:
-        return None, None
-    repo_path = Path(repo_root)
-    candidates = [
-        repo_path / ".github" / "CODEOWNERS",
-        repo_path / "CODEOWNERS",
-        repo_path / ".gitlab" / "CODEOWNERS",
-    ]
-    for candidate in candidates:
-        if not candidate.exists():
-            continue
-        try:
-            file_path = Path(filename).resolve()
-            relative_path = file_path.relative_to(repo_path.resolve()) if file_path.is_relative_to(repo_path.resolve()) else file_path.name
-            with candidate.open("r", encoding="utf-8", errors="replace") as handle:
-                for raw_line in handle:
-                    line = raw_line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    parts = line.split()
-                    if len(parts) < 2:
-                        continue
-                    pattern = parts[0]
-                    owner = parts[-1]
-                    if pattern == "*" or relative_path.match(pattern.strip("/")) or relative_path.as_posix().endswith(pattern.strip("/")):
-                        team = _infer_team(owner)
-                        return owner, team
-        except OSError:
-            continue
-    return None, None
+def _resolve_ownership(
+    filename: str,
+    config: Config,
+    author: str | None = None,
+) -> OwnershipResolution:
+    return OwnershipResolver(
+        codeowners_path=config.codeowners_path,
+        file_owners=config.ownership_mapping,
+        author_teams=config.team_mapping,
+        escalation_paths=config.escalation_paths,
+    ).resolve(filename, author=author)
 
 
 def _normalize_personal_identity(value: str | None, *, include_full_name: bool, privacy_mode: bool) -> str | None:
@@ -143,9 +123,10 @@ def _git_blame_for_line(filename: str, line_number: int, *, config: Config | Non
             capture_output=True,
             text=True,
             check=False,
+            timeout=3.0,
         )
         if result.returncode != 0 or not result.stdout.strip():
-            return _git_file_fallback(filename, line_number, config=config)
+            return _git_file_fallback(filename, config=config)
 
         commit_id = None
         author = None
@@ -153,10 +134,11 @@ def _git_blame_for_line(filename: str, line_number: int, *, config: Config | Non
         summary = None
         date = None
         for raw_line in result.stdout.splitlines():
-            if not raw_line:
+            parts = raw_line.split()
+            if not parts:
                 continue
-            if commit_id is None and len(raw_line) >= 40 and raw_line[:40].isalnum():
-                commit_id = raw_line.split()[0][:40]
+            if commit_id is None and re.fullmatch(r"[0-9a-fA-F]{40,64}", parts[0]):
+                commit_id = parts[0]
             elif raw_line.startswith("author "):
                 author = raw_line[7:]
             elif raw_line.startswith("author-mail "):
@@ -165,28 +147,45 @@ def _git_blame_for_line(filename: str, line_number: int, *, config: Config | Non
                 summary = raw_line[8:]
             elif raw_line.startswith("author-time "):
                 try:
-                    date = datetime.fromtimestamp(int(raw_line.split()[1]), tz=timezone.utc).isoformat()
-                except (TypeError, ValueError):
-                    date = raw_line.split()[1]
-        owner, team = _codeowners_for_file(filename, repo_root)
-        author_value = _normalize_personal_identity(author, include_full_name=config.include_full_author_name, privacy_mode=config.redact_private_identity)
-        email_value = email if config.include_email and not config.redact_private_identity else None if config.redact_private_identity else email
+                    date = datetime.fromtimestamp(int(parts[1]), tz=timezone.utc).isoformat()
+                except (IndexError, OverflowError, TypeError, ValueError):
+                    date = parts[1] if len(parts) > 1 else None
+        if not commit_id or set(commit_id) == {"0"}:
+            return _git_file_fallback(filename, config=config)
+        ownership = _resolve_ownership(filename, config, author)
+        owner = ownership.owners[0] if ownership.owners else None
+        team = ownership.team
+        author_value = _normalize_personal_identity(
+            author,
+            include_full_name=config.include_full_author_name,
+            privacy_mode=config.redact_private_identity,
+        )
+        owner_value = _normalize_personal_identity(
+            owner,
+            include_full_name=config.include_full_author_name,
+            privacy_mode=config.redact_private_identity,
+        )
+        author_value = sanitize_text(author_value, config) if author_value else None
+        owner_value = sanitize_text(owner_value, config) if owner_value else None
+        email_value = email if config.include_email and not config.redact_private_identity else None
         return GitResponsibility(
             commit_id=commit_id,
             author=author_value,
-            email=email_value,
-            summary=summary,
-            date=date,
-            team=team or _infer_team(author or owner),
-            owner=owner or author_value,
+            email=sanitize_text(email_value, config) if email_value else None,
+            summary=sanitize_text(summary, config) if summary is not None else None,
+            date=sanitize_text(date, config) if date is not None else None,
+            team=sanitize_text(team or _infer_team(author or owner), config)
+            if team or author or owner
+            else None,
+            owner=owner_value or author_value,
             confidence="exact_blame",
             source="git_blame",
         )
-    except (OSError, ValueError, TypeError):
-        return _git_file_fallback(filename, line_number, config=config)
+    except (OSError, ValueError, TypeError, subprocess.TimeoutExpired, IndexError):
+        return _git_file_fallback(filename, config=config)
 
 
-def _git_file_fallback(filename: str, line_number: int, *, config: Config | None = None) -> GitResponsibility | None:
+def _git_file_fallback(filename: str, *, config: Config | None = None) -> GitResponsibility | None:
     config = config or Config()
     try:
         repo_root = _git_root_for_path(filename)
@@ -200,32 +199,57 @@ def _git_file_fallback(filename: str, line_number: int, *, config: Config | None
             capture_output=True,
             text=True,
             check=False,
+            timeout=3.0,
         )
         if result.returncode != 0 or not result.stdout.strip():
-            owner, team = _codeowners_for_file(filename, repo_root)
+            ownership = _resolve_ownership(filename, config)
+            owner = ownership.owners[0] if ownership.owners else None
+            team = ownership.team
             if owner or team:
+                owner_value = _normalize_personal_identity(
+                    owner,
+                    include_full_name=config.include_full_author_name,
+                    privacy_mode=config.redact_private_identity,
+                )
+                owner_value = sanitize_text(owner_value, config) if owner_value else None
                 return GitResponsibility(
-                    author=_normalize_personal_identity(owner, include_full_name=config.include_full_author_name, privacy_mode=config.redact_private_identity),
-                    team=team,
-                    owner=owner,
+                    author=owner_value,
+                    team=sanitize_text(team, config) if team else None,
+                    owner=owner_value,
                     confidence="codeowner_fallback",
                     source="codeowners",
                 )
             return None
         commit_id, author, email, summary, date = result.stdout.strip().split("\t", 4)
-        owner, team = _codeowners_for_file(filename, repo_root)
+        ownership = _resolve_ownership(filename, config, author)
+        owner = ownership.owners[0] if ownership.owners else None
+        team = ownership.team
+        owner_value = _normalize_personal_identity(
+            owner,
+            include_full_name=config.include_full_author_name,
+            privacy_mode=config.redact_private_identity,
+        )
+        author_value = _normalize_personal_identity(
+            author,
+            include_full_name=config.include_full_author_name,
+            privacy_mode=config.redact_private_identity,
+        )
+        owner_value = sanitize_text(owner_value, config) if owner_value else None
+        author_value = sanitize_text(author_value, config) if author_value else None
         return GitResponsibility(
             commit_id=commit_id,
-            author=_normalize_personal_identity(author, include_full_name=config.include_full_author_name, privacy_mode=config.redact_private_identity),
-            email=email if config.include_email and not config.redact_private_identity else None,
-            summary=summary,
-            date=date,
-            team=team or _infer_team(author or owner),
-            owner=owner or author,
+            author=author_value,
+            email=sanitize_text(email, config) if email and config.include_email and not config.redact_private_identity else None,
+            summary=sanitize_text(summary, config),
+            date=sanitize_text(date, config),
+            team=sanitize_text(team or _infer_team(author or owner), config)
+            if team or author or owner
+            else None,
+            owner=owner_value or author_value,
             confidence="file_fallback",
             source="git_log",
         )
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, subprocess.TimeoutExpired):
         return None
 
 

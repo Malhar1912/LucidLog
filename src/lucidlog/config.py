@@ -40,6 +40,9 @@ class Config:
     include_full_author_name: bool = True
     redact_private_identity: bool = False
     codeowners_path: str | None = None
+    team_mapping: tuple[tuple[str, str], ...] = ()
+    ownership_mapping: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    escalation_paths: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     def __post_init__(self) -> None:
         for name in (
@@ -88,6 +91,33 @@ class Config:
             raise ValueError("The LucidLog core does not make network requests.")
         if self.root_path is not None and not isinstance(self.root_path, str):
             raise TypeError("root_path must be a string or None")
+        if self.codeowners_path is not None and not isinstance(self.codeowners_path, str):
+            raise TypeError("codeowners_path must be a string or None")
+        if not isinstance(self.team_mapping, tuple) or not all(
+            isinstance(item, tuple)
+            and len(item) == 2
+            and all(isinstance(value, str) for value in item)
+            for item in self.team_mapping
+        ):
+            raise TypeError("team_mapping must be a tuple of (author, team) string pairs")
+        if not isinstance(self.ownership_mapping, tuple) or not all(
+            isinstance(item, tuple)
+            and len(item) == 2
+            and isinstance(item[0], str)
+            and isinstance(item[1], tuple)
+            and all(isinstance(owner, str) for owner in item[1])
+            for item in self.ownership_mapping
+        ):
+            raise TypeError("ownership_mapping must be a tuple of (path pattern, owners) pairs")
+        if not isinstance(self.escalation_paths, tuple) or not all(
+            isinstance(item, tuple)
+            and len(item) == 2
+            and isinstance(item[0], str)
+            and isinstance(item[1], tuple)
+            and all(isinstance(owner, str) for owner in item[1])
+            for item in self.escalation_paths
+        ):
+            raise TypeError("escalation_paths must be a tuple of (team, chain) pairs")
         if self.output_stream is not None and not callable(getattr(self.output_stream, "write", None)):
             raise TypeError("output_stream must provide a write() method")
 

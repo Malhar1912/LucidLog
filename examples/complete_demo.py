@@ -117,6 +117,18 @@ def main() -> None:
             print(f"  summary: {responsibility.summary}")
             print(f"  date: {responsibility.date}")
         print(diagnostic.to_json(indent=2))
+        report = lucidlog.analyze_responsibility(
+            __file__,
+            1,
+            config=config,
+            service="lucidlog-demo",
+            environment="local",
+        )
+        print(lucidlog.render_responsibility_report(report))
+        print("Ownership heatmap:")
+        print(lucidlog.ownership_heatmap((report,)))
+        print("Responsibility graph:")
+        print(lucidlog.responsibility_graph((report,)))
 
     show("5) Thread hook integration")
 

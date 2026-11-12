@@ -4,12 +4,24 @@ All notable changes to LucidLog will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.6] - 2026-11-12
 
 ### Added
-- Git-aware line responsibility metadata that exposes author, email, commit hash, and summary for the offending source line.
-- Structured project documentation for release and publishing workflows.
-- Professional repository conventions for local release automation and CI.
+- Configurable team and file ownership mappings, CODEOWNERS resolution, escalation paths, and "who to ask" recommendations.
+- Explicit GitHub and GitLab clients for commit, pull/merge request, and linked issue metadata.
+- Commit diff previews, contribution timelines, and bounded heuristic change-risk and ownership-freshness scores.
+- Deployment/environment correlation and privacy-conscious local SQLite incident history.
+- Responsibility graph, ownership heatmap data, standalone HTML dashboard, and opt-in Slack/Teams webhooks.
+- Structured `ResponsibilityRecord` compatibility alias and responsibility information in terminal diagnostics.
+
+### Security
+- VCS lookups and notifications only make network requests when explicitly invoked; credentials are passed in memory and never logged.
+- Incident history stores diagnostic identifiers and ownership/runtime metadata, not exception messages or tracebacks.
+- Provider responses, diff previews, identity fields, dashboard content, and notification text are bounded or escaped/redacted.
+
+### Changed
+- Added configurable ownership mapping and escalation options to `Config`.
+- Package version advanced to 0.1.6.
 
 ## [0.1.5] - 2026-10-31
 

@@ -13,13 +13,70 @@ from .api import (
     uninstall,
 )
 from .config import Config, default_config
-from .models import GitResponsibility
+from .models import GitResponsibility, ResponsibilityRecord
+from .ownership import OwnershipResolution, OwnershipResolver
+from .responsibility import (
+    ChangeRisk,
+    DeploymentRecord,
+    DeploymentRegistry,
+    IncidentRecord,
+    IncidentStore,
+    OwnershipTimelineEntry,
+    ResponsibilityReport,
+    ResponsibilityScore,
+    analyze_responsibility,
+    analyze_responsibilities,
+    assess_change_risk,
+    ownership_heatmap,
+    record_incident,
+    render_responsibility_dashboard,
+    render_responsibility_report,
+    responsibility_graph,
+)
 from .rules import DiagnosticRule, clear_rules, list_rules, register_rule
+from .integrations.notifications import (
+    NotificationError,
+    SlackWebhookNotifier,
+    TeamsWebhookNotifier,
+)
+from .integrations.providers import (
+    CommitMetadata,
+    GitHubProvider,
+    GitLabProvider,
+    IssueMetadata,
+    ProviderError,
+    PullRequestMetadata,
+    VcsProvider,
+)
 
 __all__ = [
     "Config",
+    "ChangeRisk",
+    "CommitMetadata",
     "DiagnosticRule",
+    "DeploymentRecord",
+    "DeploymentRegistry",
     "GitResponsibility",
+    "GitHubProvider",
+    "GitLabProvider",
+    "IncidentRecord",
+    "IncidentStore",
+    "IssueMetadata",
+    "NotificationError",
+    "OwnershipResolution",
+    "OwnershipResolver",
+    "OwnershipTimelineEntry",
+    "ProviderError",
+    "PullRequestMetadata",
+    "ResponsibilityRecord",
+    "ResponsibilityReport",
+    "ResponsibilityScore",
+    "SlackWebhookNotifier",
+    "TeamsWebhookNotifier",
+    "VcsProvider",
+    "analyze_responsibility",
+    "analyze_responsibilities",
+    "assess_change_risk",
     "clear_diagnostic_rules",
     "clear_rules",
     "default_config",
@@ -29,11 +86,16 @@ __all__ = [
     "install",
     "list_rules",
     "log_exception",
+    "ownership_heatmap",
+    "record_incident",
     "register_diagnostic_rule",
     "register_rule",
     "render_diagnostic",
     "render_exception",
+    "render_responsibility_dashboard",
+    "render_responsibility_report",
+    "responsibility_graph",
     "uninstall",
 ]
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"

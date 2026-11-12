@@ -117,6 +117,35 @@ def render_diagnostic(
         lines.append(f"Location: {_display(diagnostic.location)}")
         if diagnostic.primary_frame.source_line:
             lines.append(f"Source: {_display(diagnostic.primary_frame.source_line)}")
+        responsibility = diagnostic.primary_frame.responsibility
+        if responsibility is not None:
+            lines.append("Responsibility:")
+            if responsibility.owner:
+                lines.append(f"  Owner: {_display(responsibility.owner)}")
+            if responsibility.team:
+                lines.append(f"  Team: {_display(responsibility.team)}")
+            if responsibility.author:
+                lines.append(f"  Author: {_display(responsibility.author)}")
+            if responsibility.commit_id:
+                lines.append(f"  Commit: {_display(responsibility.commit_id)}")
+            if responsibility.pr_number is not None:
+                pr_label = f"#{responsibility.pr_number}"
+                if responsibility.pull_request_title:
+                    pr_label += f" {_display(responsibility.pull_request_title)}"
+                if responsibility.pr_url:
+                    pr_label += f" ({_display(responsibility.pr_url)})"
+                lines.append(f"  Pull request: {pr_label}")
+            if responsibility.issue_id:
+                issue_label = _display(responsibility.issue_id)
+                if responsibility.issue_title:
+                    issue_label += f" {_display(responsibility.issue_title)}"
+                if responsibility.issue_url:
+                    issue_label += f" ({_display(responsibility.issue_url)})"
+                lines.append(f"  Issue: {issue_label}")
+            lines.append(
+                f"  Attribution: {_display(responsibility.confidence)} "
+                f"({_display(responsibility.source)})"
+            )
     if diagnostic.summary:
         lines.append(f"Diagnosis: {_display(diagnostic.summary)}")
     if diagnostic.explanation:

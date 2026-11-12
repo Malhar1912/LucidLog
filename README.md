@@ -31,7 +31,7 @@ python examples/complete_demo.py
 
 The demo covers chained exceptions, redaction, render output, custom rules, logging payloads, and the threading/asyncio integrations.
 
-## Responsibility metadata (Git-aware)
+## Responsibility intelligence (Git-aware)
 
 When the code is running inside a Git repository, LucidLog can attach attribution metadata for the exact source line that raised the exception. The diagnostic records the author name, author email, commit ID, short summary, date, ownership metadata, confidence, and source for that line when available.
 
@@ -50,6 +50,57 @@ except RuntimeError as exc:
 ```
 
 Ownership metadata supports line-level blame, file-level fallback, and CODEOWNERS resolution. You can also configure privacy flags through `lucidlog.Config` such as `include_email`, `include_full_author_name`, and `redact_private_identity`.
+
+### Ownership mappings and escalation
+
+CODEOWNERS is resolved using the last matching rule, and multiple owners are retained. Explicit mappings can add teams and escalation contacts:
+
+```python
+config = lucidlog.Config(
+    team_mapping=(("malhar", "platform"),),
+    ownership_mapping=(("src/payments/*", ("@payments", "on-call-payments")),),
+    escalation_paths=(("platform", ("platform-lead", "platform-on-call", "service-owner")),),
+)
+```
+
+`OwnershipResolver` can also be used independently for configured CODEOWNERS files and arbitrary repositories.
+
+### Change, PR, issue, deployment, and incident context
+
+`analyze_responsibility(path, line)` returns a `ResponsibilityReport` with local Git blame, contribution timeline, a bounded diff preview, change-risk and ownership-freshness estimates, confidence-aware responsibility/actionability score, owner/reviewer/escalation recommendations, deployment correlation, and matching incident history. Pass `diagnostic=...` to include exception details and correlate a runtime diagnostic with incident history. It works offline by default. Change-risk values are deterministic heuristics over recent commit/churn data, not predictions or service-level guarantees.
+
+GitHub/GitLab enrichment is explicit and requires a token passed in memory. Constructing clients or running `diagnose()` does not make network requests:
+
+```python
+import os
+
+provider = lucidlog.GitHubProvider(token=os.environ["GITHUB_TOKEN"])
+report = lucidlog.analyze_responsibility("src/app.py", 42, provider=provider)
+```
+
+Use `GitLabProvider` with the project path and its matching Git remote. Providers use HTTPS, bounded response sizes, and finite timeouts; provider failures raise `ProviderError`. Tokens should come from a secret manager or environment variable and must not be written to source code or logs.
+
+For monorepos or multiple repositories, analyze paths together and key provider/service/environment configuration by the detected `owner/repository` remote:
+
+```python
+reports = lucidlog.analyze_responsibilities(
+    [("services/payments.py", 42), ("services/search.py", 88)],
+    providers={"acme/payments": provider},
+    services={"acme/payments": "payments", "acme/search": "search"},
+    environments={"acme/payments": "production"},
+)
+```
+
+For multi-service runtime context, pass a `DeploymentRegistry` to correlate a known commit with service/environment deployments. `IncidentStore("incidents.sqlite3")` opts into local SQLite history; only identifiers, location, and ownership/runtime metadata are stored—exception messages and tracebacks are not. Use `ownership_heatmap()` and `responsibility_graph()` for structured data, or `render_responsibility_dashboard()` for a standalone escaped HTML dashboard.
+
+Slack and Microsoft Teams webhooks are also explicit operations:
+
+```python
+notifier = lucidlog.SlackWebhookNotifier(os.environ["SLACK_WEBHOOK_URL"])
+notifier.send(report)
+```
+
+Notification content is redacted using the supplied `Config` (or its safe defaults). Delivery failures raise `NotificationError`. Review organization policies before sending diagnostic metadata to third-party services.
 
 ## Public API
 
@@ -108,7 +159,7 @@ Run the unit and integration tests with:
 python -m pytest
 ```
 
-The suite covers chained and grouped exceptions, cycle/size limits, redaction, terminal colors, hook restoration, threading, asyncio, structured logging, and uncaught-process exit behavior.
+The suite covers chained and grouped exceptions, cycle/size limits, redaction, terminal colors, hook restoration, threading, asyncio, structured logging, Git ownership and risk analysis, provider response handling, incident persistence, dashboard escaping, and uncaught-process exit behavior.
 
 ## Project structure
 
